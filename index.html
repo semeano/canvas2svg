@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+
+	<style type="text/css">
+
+		body {
+			margin: 0;
+		}
+
+		#canvas {
+			width: 100vw;
+			height: 100vh;
+		}
+
+		div.buttons {
+			position: fixed;
+			top: 0;
+			left: 0;
+		}
+
+	</style>
+
+</head>
+<body>
+
+	<canvas id="canvas"></canvas>
+
+	<div class="buttons">
+		<a class="save" href="">save</a>
+		|
+		<a class="clear" href="" onclick="clear()">clear</a>
+	</div>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+	<script type="text/javascript" src="canvas2svg.js"></script>
+
+	<script type="text/javascript">
+
+		var canvasElement = document.getElementById('canvas');
+		canvasElement.width = window.innerWidth;
+		canvasElement.height = window.innerHeight;
+
+		// Real canvas
+		var context = canvasElement.getContext("2d");
+
+		// Canvas to be exported to SVG
+		var ctx = new C2S(window.innerWidth, window.innerHeight);
+
+		var paint;
+
+		$('#canvas').on('mousedown', down);
+		$('#canvas').on('touchstart', down);
+		function down(ev) {
+			var e = ev.originalEvent.touches ? ev.originalEvent.touches[0] : ev;
+		  var mouseX = e.pageX - this.offsetLeft;
+		  var mouseY = e.pageY - this.offsetTop;
+				
+		  paint = true;
+		  addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop);
+		  redraw();
+		}
+
+		$('#canvas').on('mousemove', move);
+		$('#canvas').on('touchmove', move);
+		function move(ev) {
+		  if (paint) {
+				var e = ev.originalEvent.touches ? ev.originalEvent.touches[0] : ev;
+		    addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop, true);
+		    redraw();
+		  }
+		}
+
+		$('#canvas').on('mouseup', end);
+		$('#canvas').on('mouseleave', end);
+		$('#canvas').on('touchend', end);
+		function end(e) {
+		  paint = false;
+		}
+
+		var clickX = [];
+		var clickY = [];
+		var clickDrag = [];
+
+		function addClick(x, y, dragging) {
+		  clickX.push(x);
+		  clickY.push(y);
+		  clickDrag.push(dragging);
+		}
+
+		function redraw(){
+		  context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+		  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // Clears the canvas
+		  
+		  context.strokeStyle = ctx.strokeStyle = "black";
+		  context.lineJoin = ctx.lineJoin = "round";
+		  context.lineWidth = ctx.lineWidth = 5;
+
+		  for (var i=0; i < clickX.length; i++) {		
+		    context.beginPath();
+		    ctx.beginPath();
+		    
+		    if (clickDrag[i] && i) {
+		      context.moveTo(clickX[i-1], clickY[i-1]);
+		      ctx.moveTo(clickX[i-1], clickY[i-1]);
+		    } else {
+		      context.moveTo(clickX[i]-1, clickY[i]);
+		      ctx.moveTo(clickX[i]-1, clickY[i]);
+		    }
+
+		    context.lineTo(clickX[i], clickY[i]);
+		    context.closePath();
+		    context.stroke();
+
+		    ctx.lineTo(clickX[i], clickY[i]);
+		    ctx.closePath();
+		    ctx.stroke();
+		  }
+		}
+
+		$('.save').on('click', function () {
+			var drawing = ctx.getSerializedSvg(true);
+			$(this).attr("href", "data:image/svg+xml," + encodeURIComponent(drawing)).attr("download", "drawing.svg");
+    });
+
+    $('.clear').on('click', function (e) {
+    	context.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    	ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    	clickX = [];
+			clickY = [];
+			clickDrag = [];
+    	e.preventDefault();
+    });
+
+	</script>
+
+</body>
+</html>
